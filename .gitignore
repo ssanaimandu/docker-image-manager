@@ -1,0 +1,27 @@
+# Root gitignore
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.eslintcache
+frontend/coverage/
+
+# Backend
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.env
+backend/.pytest_cache/
+backend/dim-backend.log
+
+# Config (ignore config.json if you want to keep secrets safe, though usually we commit a template)
+# config/config.json 

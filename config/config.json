@@ -1,0 +1,59 @@
+{
+  "auth": {
+    "enabled": true,
+    "jwt_secret": "eeb00d23-2679-450f-90e6-a05c3c0a520c",
+    "local": {
+      "username": "admin",
+      "password_hash": "$2b$12$/h76Yg0v4uIlB5bnh9yGvO8mMktOQ97zKLX8NOFdILSQbKdaT3FGG"
+    },
+    "oauth": {
+      "github": {
+        "enabled": false,
+        "client_id": "",
+        "client_secret": ""
+      },
+      "oidc": {
+        "enabled": true,
+        "provider_name": "Authelia",
+        "client_id": "YOUR_AUTHELIA_CLIENT_ID",
+        "client_secret": "YOUR_AUTHELIA_CLIENT_SECRET",
+        "authorization_url": "https://auth.yourdomain.com/api/oidc/authorization",
+        "token_url": "https://auth.yourdomain.com/api/oidc/token",
+        "userinfo_url": "https://auth.yourdomain.com/api/oidc/userinfo",
+        "scope": "openid profile email"
+      }
+    }
+  },
+  "default_keep_tags": 5,
+  "sources": [
+    {
+      "id": "f67677e4-029a-4807-80c9-f134ccd395d0",
+      "name": "Local Docker Engine",
+      "type": "docker_engine",
+      "connection": {
+        "socket_path": "/var/run/docker.sock"
+      },
+      "enabled": true
+    },
+    {
+      "id": "d7927815-92e5-463d-a936-e959f1a5c411",
+      "name": "Remote Docker (192.168.0.19)",
+      "type": "docker_engine",
+      "connection": {
+        "host": "tcp://192.168.0.19:2375",
+        "tls": false
+      },
+      "enabled": true
+    }
+  ],
+  "image_policies": {
+    "traefik": {
+      "keep_tags": 3,
+      "exclude_from_cleanup": true,
+      "protected_tags": [
+        "latest",
+        "v3.0"
+      ]
+    }
+  }
+}
