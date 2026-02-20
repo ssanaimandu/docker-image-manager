@@ -1,0 +1,11 @@
+# 라우팅 페이지 (Pages)
+
+이 폴더의 소스는 **개별 페이지 (대시보드 화면 하나하나)**의 레이아웃과 생명주기를 모두 관리하는 상위 컴포넌트(Container)입니다. `App.jsx` 내 `react-router-dom`의 `<Route />` 에 할당되어, 브라우저 주소창(`Url`)이 바뀔 때 마다 `Pages/` 내의 `.jsx`가 언마운트(삭제) 혹은 마운트(실행) 됩니다.
+
+## 화면 파일 소개
+- `Login.jsx` (`/login`): 인증이 이뤄지지 않은 사용자에게 보여지는 카드 형식 디자인, 로컬 폼 전송부터 OAuth(Github, OIDC Authelia)를 실행하는 외부 링크 Redirection 기능을 제공합니다. 성공 시 토큰을 브라우저 브리지(`localStorage`)로 던지고 대시보드로 이동시킵니다.
+- `Dashboard.jsx` (`/`): 모든 API 엔드포인트에 쿼리를 쏴서 시스템 상태(현재 연동된 도커 개수, 보유한 이미지 스태틱스틱, 정리된 메가바이트 규모)를 요약해 렌더링하는 `Hero Status Board` 요소.
+- `Sources.jsx` (`/sources`): 도커 인프라 설정 창. 추가 및 Socket/TCP를 테스트할 수 있게끔 백엔드 통신 프로시저가 연동되어 있습니다.
+- `Images.jsx` (`/images`): 접속 가능한 컨테이너 인프라가 배포중인 실제 이미지 파일들과 그에 따른 부가 속성(해시값 등)을 나열합니다.
+- `Policies.jsx` (`/policies`): `docker-image-manager`의 가비지 컬렉터에 내릴 구체적 삭제 스펙 및 커스텀 정책의 CRUD.
+- `Cleanup.jsx` (`/cleanup`): 실시간으로 저장소에서 필요없는 리소스를 찾아 스캐닝(미리보기)하고 삭제 버튼으로 날려버릴 수 있는 UI 인터페이스입니다.
