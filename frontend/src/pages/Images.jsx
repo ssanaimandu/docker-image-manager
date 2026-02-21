@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllImages, getSources, deleteImageTag } from '../api/client';
+import { getAllImages, getSources, deleteImageTag, getImagePolicy, updateImagePolicy } from '../api/client';
 import { useToast } from '../components/Toast';
 
 export default function Images() {
@@ -9,6 +9,7 @@ export default function Images() {
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState(null);
+    const [selectedTags, setSelectedTags] = useState([]);
 
     const toast = useToast();
 
@@ -35,6 +36,83 @@ export default function Images() {
         } catch (err) {
             toast(`Delete failed: ${err.message}`, 'error');
         }
+    };
+
+    const handleBatchDelete = async () => {
+        if (selectedTags.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedTags.length} selected tags?`)) return;
+
+        let successCount = 0;
+        let failCount = 0;
+
+        setLoading(true);
+        for (const sel of selectedTags) {
+            try {
+                await deleteImageTag(sel.sourceId, sel.imageName, sel.tag, false);
+                successCount++;
+            } catch (err) {
+                failCount++;
+            }
+        }
+
+        if (failCount > 0) {
+            toast(`Batch delete finished: ${successCount} deleted, ${failCount} failed`, 'warning');
+        } else {
+            toast(`Successfully deleted ${successCount} tags`, 'success');
+        }
+
+        setSelectedTags([]);
+        load();
+    };
+
+    const toggleProtect = async (imageName, tagParam, isCurrentlyProtected) => {
+        try {
+            const policy = await getImagePolicy(imageName);
+            let newProtected = policy.protected_tags || [];
+
+            if (isCurrentlyProtected) {
+                newProtected = newProtected.filter(t => t !== tagParam);
+            } else {
+                newProtected = [...newProtected, tagParam];
+            }
+
+            await updateImagePolicy(imageName, { protected_tags: newProtected });
+            toast(`Tag ${imageName}:${tagParam} is now ${isCurrentlyProtected ? 'unprotected' : 'protected'}`, 'success');
+            load();
+        } catch (err) {
+            toast(`Failed to update protection: ${err.message}`, 'error');
+        }
+    };
+
+    const toggleSelection = (sourceId, imageName, tag, checked) => {
+        if (checked) {
+            setSelectedTags(prev => [...prev, { sourceId, imageName, tag }]);
+        } else {
+            setSelectedTags(prev => prev.filter(s => !(s.sourceId === sourceId && s.imageName === imageName && s.tag === tag)));
+        }
+    };
+
+    const toggleAllTags = (img, checked) => {
+        const availableTags = (img.tags || []).filter(t => !t.is_running);
+        if (checked) {
+            const newSelections = availableTags.map(t => ({ sourceId: img.source_id, imageName: img.name, tag: t.tag }));
+            // Add what we don't have
+            setSelectedTags(prev => {
+                const combined = [...prev];
+                newSelections.forEach(ns => {
+                    if (!combined.some(c => c.sourceId === ns.sourceId && c.imageName === ns.imageName && c.tag === ns.tag)) {
+                        combined.push(ns);
+                    }
+                });
+                return combined;
+            });
+        } else {
+            setSelectedTags(prev => prev.filter(s => s.imageName !== img.name || s.sourceId !== img.source_id));
+        }
+    };
+
+    const isSelected = (sourceId, imageName, tag) => {
+        return selectedTags.some(s => s.sourceId === sourceId && s.imageName === imageName && s.tag === tag);
     };
 
     const sourceTypeLabel = (type) => {
@@ -82,6 +160,11 @@ export default function Images() {
                     <option value="private_registry">Private Registry</option>
                     <option value="artifactory">Artifactory</option>
                 </select>
+                {selectedTags.length > 0 && (
+                    <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleBatchDelete}>
+                        🗑️ Delete Selected ({selectedTags.length})
+                    </button>
+                )}
             </div>
 
             {loading ? (
@@ -133,6 +216,13 @@ export default function Images() {
                                                         <table>
                                                             <thead>
                                                                 <tr>
+                                                                    <th style={{ width: 40 }}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            onChange={e => toggleAllTags(img, e.target.checked)}
+                                                                            checked={(img.tags || []).filter(t => !t.is_running).length > 0 && (img.tags || []).filter(t => !t.is_running).every(t => isSelected(img.source_id, img.name, t.tag))}
+                                                                        />
+                                                                    </th>
                                                                     <th>Tag</th>
                                                                     <th>Size</th>
                                                                     <th>Created</th>
@@ -142,7 +232,15 @@ export default function Images() {
                                                             </thead>
                                                             <tbody>
                                                                 {(img.tags || []).map((t, ti) => (
-                                                                    <tr key={ti}>
+                                                                    <tr key={ti} style={{ background: isSelected(img.source_id, img.name, t.tag) ? 'rgba(var(--color-primary-rgb), 0.1)' : 'transparent' }}>
+                                                                        <td>
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={isSelected(img.source_id, img.name, t.tag)}
+                                                                                onChange={e => toggleSelection(img.source_id, img.name, t.tag, e.target.checked)}
+                                                                                disabled={t.is_running}
+                                                                            />
+                                                                        </td>
                                                                         <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{t.tag}</td>
                                                                         <td>{formatSize(t.size)}</td>
                                                                         <td style={{ color: 'var(--text-secondary)' }}>{t.created ? new Date(t.created).toLocaleString() : '-'}</td>
@@ -150,7 +248,14 @@ export default function Images() {
                                                                             {t.is_running && <span className="badge badge-info" style={{ marginRight: 4 }}>Running</span>}
                                                                             {t.is_protected && <span className="badge badge-warning">Protected</span>}
                                                                         </td>
-                                                                        <td>
+                                                                        <td style={{ display: 'flex', gap: 6 }}>
+                                                                            <button
+                                                                                className="btn btn-secondary"
+                                                                                style={{ padding: '4px 8px', fontSize: '12px', background: 'var(--bg-elevated)', color: t.is_protected ? 'var(--text-secondary)' : '#ffb84d', border: '1px solid rgba(255, 184, 77, 0.3)' }}
+                                                                                onClick={() => toggleProtect(img.name, t.tag, t.is_protected)}
+                                                                            >
+                                                                                {t.is_protected ? '🔓 Unprotect' : '🔒 Protect'}
+                                                                            </button>
                                                                             <button
                                                                                 className="btn btn-secondary"
                                                                                 style={{ padding: '4px 8px', fontSize: '12px', background: 'var(--bg-elevated)', color: '#ff4c4c', border: '1px solid rgba(255, 76, 76, 0.3)' }}

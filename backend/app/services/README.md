@@ -5,4 +5,4 @@
 ## 핵심 컴포넌트
 - `docker_engine.py`: `docker_client()` (Docker-py) 모듈을 이용해 `Local Socket(/var/run/docker.sock)` 및 `Remote TCP` 데몬과 직접 통신하여 이미지를 조회 및 태그 삭제하는 구현부입니다.
 - `private_registry.py` & `artifactory.py`: Docker 공식 Registry V2 API 혹은 JFrog와 같이 별도의 REST 통신이 필요한 원격 저장소에 대응하기 위해 HTTP Client(httpx)를 활용하는 모듈입니다. (확장 대응)
-- `cleanup.py`: 가장 핵심적인 알고리즘이 내장되어 있습니다. `preview/execute` 로직에서 등록된 Policy 설정(유지 개수 등)을 바탕으로 날짜를 소팅하고 태그를 비교하여 "지워야 할 것"과 "보존해야 할 것" 집합을 수학적으로 구분하는 프로세스가 있습니다. (Dry Run 포함)
+- `cleanup.py`: 가장 핵심적인 알고리즘이 내장되어 있습니다. `preview/execute` 로직에서 등록된 Policy 설정(유지 개수 등)을 바탕으로 날짜를 소팅하고 태그를 비교하여 "지워야 할 것"과 "보존해야 할 것" 집합을 수학적으로 구분합니다. 이 스캐닝 과정 중에 **삭제 예정인 이미지의 바이트 크기를 합산(freed_bytes)**하여 Frontend 드라이런에서 예측 용량 지표로 쓸 수 있도록 지원합니다.

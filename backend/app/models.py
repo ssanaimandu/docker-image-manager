@@ -139,11 +139,13 @@ class CleanupPreviewItem(BaseModel):
     tags_to_delete: list[str]
     tags_to_keep: list[str]
     reason_kept: dict[str, str] = Field(default_factory=dict)  # tag → reason
+    freed_bytes: int = 0
 
 
 class CleanupResult(BaseModel):
     total_deleted: int = 0
     total_failed: int = 0
+    total_freed_bytes: int = 0
     details: list[CleanupResultDetail] = Field(default_factory=list)
 
 

@@ -43,6 +43,15 @@ export default function Cleanup() {
         return map[type] || type;
     };
 
+    const formatSize = (bytes) => {
+        if (!bytes) return '0 MB';
+        const mb = bytes / 1024 / 1024;
+        if (mb > 1024) return `${(mb / 1024).toFixed(1)} GB`;
+        return `${mb.toFixed(1)} MB`;
+    };
+
+    const totalFreed = preview ? preview.reduce((acc, p) => acc + (p.freed_bytes || 0), 0) : 0;
+
     return (
         <div>
             <div className="page-header">
@@ -74,6 +83,9 @@ export default function Cleanup() {
                     color: 'var(--color-danger)',
                 }}>
                     ⚠️ <strong>Warning:</strong> Deleting tags is irreversible. Please review the list below carefully before executing.
+                    <div style={{ marginTop: 8, fontSize: 14, color: 'var(--text-primary)' }}>
+                        <strong>Estimated space to be freed: <span style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>{formatSize(totalFreed)}</span></strong>
+                    </div>
                 </div>
             )}
 
@@ -98,7 +110,10 @@ export default function Cleanup() {
                                     <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
                                     <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.source_name} ({sourceTypeLabel(item.source_type)})</span>
                                 </div>
-                                <span className="badge badge-danger">{item.tags_to_delete.length} to delete</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>{formatSize(item.freed_bytes)}</span>
+                                    <span className="badge badge-danger">{item.tags_to_delete.length} to delete</span>
+                                </div>
                             </div>
                             <div className="cleanup-tags">
                                 <div style={{ width: '100%', marginBottom: 8 }}>
@@ -151,6 +166,10 @@ export default function Cleanup() {
                         <div className="stat-card">
                             <div className="stat-value" style={{ color: result.total_failed > 0 ? 'var(--color-danger)' : 'var(--text-muted)' }}>{result.total_failed}</div>
                             <div className="stat-label">Failed</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-value" style={{ color: 'var(--color-success)' }}>{formatSize(result.total_freed_bytes)}</div>
+                            <div className="stat-label">Space Freed</div>
                         </div>
                     </div>
                     {result.details && result.details.length > 0 && (

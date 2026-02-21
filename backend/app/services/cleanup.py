@@ -79,6 +79,7 @@ def build_cleanup_preview(source_ids: list[str] | None = None) -> list[CleanupPr
             tags_to_delete: list[str] = []
             reason_kept: dict[str, str] = {}
             kept_count = 0
+            freed_bytes = 0
 
             for tinfo in sorted_tags:
                 tag = tinfo.tag
@@ -102,6 +103,8 @@ def build_cleanup_preview(source_ids: list[str] | None = None) -> list[CleanupPr
                     kept_count += 1
                 else:
                     tags_to_delete.append(tag)
+                    if tinfo.size:
+                        freed_bytes += tinfo.size
 
             if tags_to_delete:
                 previews.append(
@@ -113,6 +116,7 @@ def build_cleanup_preview(source_ids: list[str] | None = None) -> list[CleanupPr
                         tags_to_delete=tags_to_delete,
                         tags_to_keep=tags_to_keep,
                         reason_kept=reason_kept,
+                        freed_bytes=freed_bytes,
                     )
                 )
 
@@ -155,6 +159,8 @@ def execute_cleanup(source_ids: list[str] | None = None) -> CleanupResult:
                 result.details.append(detail)
                 if ok:
                     result.total_deleted += 1
+                    # Approximate the freed size based on preview
+                    result.total_freed_bytes += item.freed_bytes // len(item.tags_to_delete) if item.freed_bytes else 0
                 else:
                     result.total_failed += 1
             except Exception as exc:
