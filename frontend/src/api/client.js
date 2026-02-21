@@ -63,6 +63,7 @@ export const testSource = (id) => request(`/api/sources/${id}/test`, { method: '
 // Images
 export const getAllImages = () => request('/api/images');
 export const getImagesBySource = (sourceId) => request(`/api/images/by-source/${sourceId}`);
+export const deleteImageTag = (sourceId, imageName, tag, force = false) => request(`/api/images/${sourceId}/${encodeURIComponent(imageName)}/tags/${encodeURIComponent(tag)}?force=${force}`, { method: 'DELETE' });
 
 // Policies
 export const getPolicies = () => request('/api/policies');

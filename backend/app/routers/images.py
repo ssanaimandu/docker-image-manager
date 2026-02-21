@@ -72,3 +72,28 @@ def list_images_by_source(source_id: str):
         return svc.list_images(source.id, source.name)
     except Exception as exc:
         raise HTTPException(500, str(exc))
+
+@router.delete("/{source_id}/{image_name:path}/tags/{tag}")
+def delete_image_tag(source_id: str, image_name: str, tag: str, force: bool = False):
+    """Delete a specific image tag manually."""
+    cfg = get_current_config()
+    source = next((s for s in cfg.sources if s.id == source_id), None)
+    if not source:
+        raise HTTPException(404, "Source not found")
+
+    svc = _get_service(source)
+    if svc is None:
+        raise HTTPException(400, "Unsupported source type")
+
+    try:
+        if source.type == SourceType.DOCKER_ENGINE:
+            success = svc.delete_image(image_name, tag, force=force)
+        else:
+            success = svc.delete_tag(image_name, tag)
+            
+        if success:
+            return {"status": "success", "message": f"Deleted {image_name}:{tag}"}
+        else:
+            raise HTTPException(400, f"Failed to delete {image_name}:{tag}. It may not exist or cannot be removed.")
+    except Exception as exc:
+        raise HTTPException(500, str(exc))

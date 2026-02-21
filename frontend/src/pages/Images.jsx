@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getAllImages, getSources } from '../api/client';
+import { getAllImages, getSources, deleteImageTag } from '../api/client';
+import { useToast } from '../components/Toast';
 
 export default function Images() {
     const [images, setImages] = useState([]);
@@ -9,18 +10,32 @@ export default function Images() {
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState(null);
 
+    const toast = useToast();
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const [imgs, srcs] = await Promise.all([getAllImages(), getSources()]);
+            setImages((imgs || []).filter(i => !i.error));
+            setSources(srcs || []);
+        } catch { /* */ }
+        setLoading(false);
+    };
+
     useEffect(() => {
-        async function load() {
-            setLoading(true);
-            try {
-                const [imgs, srcs] = await Promise.all([getAllImages(), getSources()]);
-                setImages((imgs || []).filter(i => !i.error));
-                setSources(srcs || []);
-            } catch { /* */ }
-            setLoading(false);
-        }
         load();
     }, []);
+
+    const handleDeleteTag = async (sourceId, imageName, tagParam, force = false) => {
+        if (!confirm(`Are you sure you want to delete ${imageName}:${tagParam}?`)) return;
+        try {
+            await deleteImageTag(sourceId, imageName, tagParam, force);
+            toast(`Successfully deleted ${imageName}:${tagParam}`, 'success');
+            load();
+        } catch (err) {
+            toast(`Delete failed: ${err.message}`, 'error');
+        }
+    };
 
     const sourceTypeLabel = (type) => {
         const map = { docker_engine: 'Docker Engine', private_registry: 'Private Registry', artifactory: 'Artifactory' };
@@ -122,6 +137,7 @@ export default function Images() {
                                                                     <th>Size</th>
                                                                     <th>Created</th>
                                                                     <th>Status</th>
+                                                                    <th>Actions</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -133,6 +149,16 @@ export default function Images() {
                                                                         <td>
                                                                             {t.is_running && <span className="badge badge-info" style={{ marginRight: 4 }}>Running</span>}
                                                                             {t.is_protected && <span className="badge badge-warning">Protected</span>}
+                                                                        </td>
+                                                                        <td>
+                                                                            <button
+                                                                                className="btn btn-secondary"
+                                                                                style={{ padding: '4px 8px', fontSize: '12px', background: 'var(--bg-elevated)', color: '#ff4c4c', border: '1px solid rgba(255, 76, 76, 0.3)' }}
+                                                                                onClick={() => handleDeleteTag(img.source_id, img.name, t.tag, false)}
+                                                                                disabled={t.is_running}
+                                                                            >
+                                                                                Delete
+                                                                            </button>
                                                                         </td>
                                                                     </tr>
                                                                 ))}
