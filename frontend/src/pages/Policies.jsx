@@ -103,7 +103,7 @@ export default function Policies() {
                         <input
                             className="form-input"
                             type="number"
-                            min={1}
+                            min={0}
                             value={defaultKeep}
                             onChange={e => setDefaultKeep(Number(e.target.value))}
                         />
@@ -191,7 +191,7 @@ export default function Policies() {
                                 <input
                                     className="form-input"
                                     type="number"
-                                    min={1}
+                                    min={0}
                                     value={form.keep_tags}
                                     onChange={e => setForm(f => ({ ...f, keep_tags: e.target.value }))}
                                     placeholder={`Default: ${defaultKeep}`}
