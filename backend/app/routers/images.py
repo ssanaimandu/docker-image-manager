@@ -37,6 +37,14 @@ def list_all_images():
             if svc is None:
                 continue
             images = svc.list_images(source.id, source.name)
+            
+            for img in images:
+                policy = cfg.image_policies.get(img.name)
+                if policy and policy.protected_tags:
+                    protected_set = set(policy.protected_tags)
+                    for t in img.tags:
+                        t.is_protected = t.tag in protected_set
+
             all_images.extend(images)
         except Exception as exc:
             # Return error info instead of crashing the whole request
@@ -69,7 +77,16 @@ def list_images_by_source(source_id: str):
         raise HTTPException(400, "Unsupported source type")
 
     try:
-        return svc.list_images(source.id, source.name)
+        images = svc.list_images(source.id, source.name)
+        
+        for img in images:
+            policy = cfg.image_policies.get(img.name)
+            if policy and policy.protected_tags:
+                protected_set = set(policy.protected_tags)
+                for t in img.tags:
+                    t.is_protected = t.tag in protected_set
+                    
+        return images
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
