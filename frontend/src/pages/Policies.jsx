@@ -9,7 +9,7 @@ export default function Policies() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editName, setEditName] = useState('');
-    const [form, setForm] = useState({ keep_tags: '', exclude_from_cleanup: false, protected_tags: '' });
+    const [form, setForm] = useState({ keep_tags: '', exclude_from_cleanup: false, protected_tags: [] });
 
     const load = async () => {
         setLoading(true);
@@ -38,14 +38,14 @@ export default function Policies() {
         setForm({
             keep_tags: existing.keep_tags ?? '',
             exclude_from_cleanup: existing.exclude_from_cleanup || false,
-            protected_tags: (existing.protected_tags || []).join(', '),
+            protected_tags: existing.protected_tags || [],
         });
         setShowModal(true);
     };
 
     const openCreate = () => {
         setEditName('');
-        setForm({ keep_tags: '', exclude_from_cleanup: false, protected_tags: '' });
+        setForm({ keep_tags: '', exclude_from_cleanup: false, protected_tags: [] });
         setShowModal(true);
     };
 
@@ -53,9 +53,7 @@ export default function Policies() {
         const name = editName || form.image_name;
         if (!name) { toast('Image name required', 'error'); return; }
         try {
-            const protectedList = form.protected_tags
-                ? Array.from(new Set(form.protected_tags.split(',').map(t => t.trim()).filter(Boolean)))
-                : [];
+            const protectedList = Array.from(new Set((form.protected_tags || []).map(t => t.trim()).filter(Boolean)));
             await updateImagePolicy(name, {
                 keep_tags: form.keep_tags !== '' ? Number(form.keep_tags) : null,
                 exclude_from_cleanup: form.exclude_from_cleanup,
@@ -81,6 +79,21 @@ export default function Policies() {
     };
 
     const policyEntries = Object.entries(policies);
+
+    const handleAddTag = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const val = e.target.value.trim().replace(/,/g, '');
+            if (val) {
+                setForm(f => ({ ...f, protected_tags: Array.from(new Set([...f.protected_tags, val])) }));
+            }
+            e.target.value = '';
+        }
+    };
+
+    const removeTag = (tagToRemove) => {
+        setForm(f => ({ ...f, protected_tags: f.protected_tags.filter(t => t !== tagToRemove) }));
+    };
 
     return (
         <div>
@@ -204,12 +217,19 @@ export default function Policies() {
                                 </label>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Protected Tags (comma-separated)</label>
+                                <label className="form-label">Protected Tags</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                                    {(form.protected_tags || []).map(t => (
+                                        <span key={t} className="tag-pill protected" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', fontSize: 13, background: 'rgba(255, 184, 77, 0.15)', color: '#ffb84d', borderRadius: 4, border: '1px solid rgba(255, 184, 77, 0.3)' }}>
+                                            {t}
+                                            <span onClick={() => removeTag(t)} style={{ cursor: 'pointer', opacity: 0.7, fontSize: 14 }}>&times;</span>
+                                        </span>
+                                    ))}
+                                </div>
                                 <input
                                     className="form-input"
-                                    value={form.protected_tags}
-                                    onChange={e => setForm(f => ({ ...f, protected_tags: e.target.value }))}
-                                    placeholder="latest, stable, production"
+                                    onKeyDown={handleAddTag}
+                                    placeholder="Type a tag and press Enter or Comma..."
                                 />
                             </div>
                         </div>
