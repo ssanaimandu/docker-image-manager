@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSources, getAllImages, getPolicies } from '../api/client';
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({ sources: 0, images: 0, tags: 0, policies: 0 });
     const [sources, setSources] = useState([]);
     const [recentImages, setRecentImages] = useState([]);
@@ -66,19 +68,19 @@ export default function Dashboard() {
 
             {/* Stats */}
             <div className="stats-grid">
-                <div className="stat-card">
+                <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={() => navigate('/sources')}>
                     <div className="stat-value">{stats.sources}</div>
                     <div className="stat-label">Connected Sources</div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={() => navigate('/images')}>
                     <div className="stat-value">{stats.images}</div>
                     <div className="stat-label">Total Images</div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={() => navigate('/images')}>
                     <div className="stat-value">{stats.tags}</div>
                     <div className="stat-label">Total Tags</div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={() => navigate('/policies')}>
                     <div className="stat-value">{stats.policies}</div>
                     <div className="stat-label">Image Policies</div>
                 </div>
