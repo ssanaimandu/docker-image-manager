@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllImages, getSources, deleteImageTag, getImagePolicy, updateImagePolicy } from '../api/client';
+import { getAllImages, getSources, deleteImageTag, getImagePolicy, updateImagePolicy, getPolicies } from '../api/client';
 import { useToast } from '../components/Toast';
 
 export default function Images() {
@@ -16,8 +16,12 @@ export default function Images() {
     const load = async () => {
         setLoading(true);
         try {
-            const [imgs, srcs] = await Promise.all([getAllImages(), getSources()]);
-            setImages((imgs || []).filter(i => !i.error));
+            const [imgs, srcs, pols] = await Promise.all([getAllImages(), getSources(), getPolicies()]);
+            const imagePolicies = pols?.image_policies || {};
+            setImages((imgs || []).filter(i => !i.error).map(img => ({
+                ...img,
+                is_protected: imagePolicies[img.name]?.exclude_from_cleanup || false
+            })));
             setSources(srcs || []);
         } catch { /* */ }
         setLoading(false);
@@ -81,6 +85,17 @@ export default function Images() {
             load();
         } catch (err) {
             toast(`Failed to update protection: ${err.message}`, 'error');
+        }
+    };
+
+    const toggleImageProtect = async (imageName, isCurrentlyProtected, e) => {
+        if (e) e.stopPropagation();
+        try {
+            await updateImagePolicy(imageName, { exclude_from_cleanup: !isCurrentlyProtected });
+            toast(`Image ${imageName} is now ${isCurrentlyProtected ? 'unprotected' : 'protected'}`, 'success');
+            load();
+        } catch (err) {
+            toast(`Failed to update image protection: ${err.message}`, 'error');
         }
     };
 
@@ -192,6 +207,7 @@ export default function Images() {
                                     <th>Source</th>
                                     <th>Type</th>
                                     <th>Tags</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -208,10 +224,22 @@ export default function Images() {
                                                 </span>
                                             </td>
                                             <td><span className="badge badge-info">{img.tag_count}</span></td>
+                                            <td onClick={(e) => e.stopPropagation()}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    {img.is_protected && <span className="badge badge-warning">Protected</span>}
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '4px 8px', fontSize: '12px', background: 'var(--bg-elevated)', color: img.is_protected ? 'var(--text-secondary)' : '#ffb84d', border: '1px solid rgba(255, 184, 77, 0.3)' }}
+                                                        onClick={(e) => toggleImageProtect(img.name, img.is_protected, e)}
+                                                    >
+                                                        {img.is_protected ? '🔓 Unprotect' : '🔒 Protect'}
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                         {expanded === idx && (
                                             <tr key={`${idx}-tags`}>
-                                                <td colSpan={5} style={{ padding: 0 }}>
+                                                <td colSpan={6} style={{ padding: 0 }}>
                                                     <div style={{ background: 'var(--bg-elevated)', padding: '16px 24px' }}>
                                                         <table>
                                                             <thead>
