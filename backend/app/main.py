@@ -13,6 +13,9 @@ from fastapi.staticfiles import StaticFiles
 from app.config import load_config, get_web_port
 from app.routers import sources, images, policies, cleanup, auth
 from app.utils.logger import setup_logging, get_logger
+from fastapi import Request
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 @asynccontextmanager
@@ -59,3 +62,11 @@ def health():
 _static_dir = Path(__file__).resolve().parent.parent / "static"
 if _static_dir.is_dir():
     app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
+
+@app.exception_handler(StarletteHTTPException)
+async def spa_fallback_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and not request.url.path.startswith("/api/"):
+        index_file = _static_dir / "index.html"
+        if index_file.is_file():
+            return FileResponse(str(index_file))
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
