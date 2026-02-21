@@ -54,7 +54,7 @@ export default function Policies() {
         if (!name) { toast('Image name required', 'error'); return; }
         try {
             const protectedList = form.protected_tags
-                ? form.protected_tags.split(',').map(t => t.trim()).filter(Boolean)
+                ? Array.from(new Set(form.protected_tags.split(',').map(t => t.trim()).filter(Boolean)))
                 : [];
             await updateImagePolicy(name, {
                 keep_tags: form.keep_tags !== '' ? Number(form.keep_tags) : null,

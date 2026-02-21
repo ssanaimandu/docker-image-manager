@@ -77,7 +77,7 @@ export default function Images() {
             if (isCurrentlyProtected) {
                 newProtected = newProtected.filter(t => t !== tagParam);
             } else {
-                newProtected = [...newProtected, tagParam];
+                newProtected = Array.from(new Set([...newProtected, tagParam]));
             }
 
             await updateImagePolicy(imageName, { protected_tags: newProtected });

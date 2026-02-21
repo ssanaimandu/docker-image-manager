@@ -47,7 +47,13 @@ def update_image_policy(image_name: str, body: PolicyUpdate):
     if body.exclude_from_cleanup is not None:
         existing.exclude_from_cleanup = body.exclude_from_cleanup
     if body.protected_tags is not None:
-        existing.protected_tags = body.protected_tags
+        seen = set()
+        unique_tags = []
+        for t in body.protected_tags:
+            if t not in seen:
+                unique_tags.append(t)
+                seen.add(t)
+        existing.protected_tags = unique_tags
 
     cfg.image_policies[image_name] = existing
     save_config(cfg)
