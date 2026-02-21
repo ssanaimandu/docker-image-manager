@@ -1,0 +1,22 @@
+services:
+  docker-image-manager:
+    build: .
+    container_name: docker-image-manager
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    volumes:
+      # Mount docker.sock for local Docker Engine management
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persist configuration
+      - ./config:/app/config
+      # Mount backend source code for easy updates without rebuilding
+      - ./backend/app:/app/app
+      # Mount frontend build output (run `npm run build` in frontend to reflect UI changes)
+      - ./frontend/dist:/app/static
+    environment:
+      - DIM_WEB_PORT=3000
+      - DIM_CONFIG_PATH=/app/config/config.json
+      - DIM_LOG_LEVEL=INFO
+    # Enable Uvicorn hot-reload in development
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload" ]
