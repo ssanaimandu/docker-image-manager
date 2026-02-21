@@ -25,3 +25,9 @@ backend/dim-backend.log
 
 # Config (ignore config.json if you want to keep secrets safe, though usually we commit a template)
 # config/config.json 
+backend/app/__pycache__/*
+backend/app/routers/__pycache__/*
+backend/app/services/__pycache__/*
+backend/app/utils/__pycache__/*
+backend/app/models/__pycache__/*
+backend/app/routers/__pycache__/images.cpython-312.pyc

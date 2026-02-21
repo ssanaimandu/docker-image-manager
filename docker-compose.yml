@@ -1,16 +1,16 @@
 services:
   docker-image-manager:
-    build: .
+    image: ssanaimandu/docker-image-manager:latest
     container_name: docker-image-manager
     restart: unless-stopped
     ports:
-      - "${DIM_WEB_PORT:-8080}:8080"
+      - "${DIM_WEB_PORT:-8880}:8080"
     volumes:
       # Mount docker.sock for local Docker Engine management
       - /var/run/docker.sock:/var/run/docker.sock
       # Persist configuration
       - ./config:/app/config
     environment:
-      - DIM_WEB_PORT=8080
+      - DIM_WEB_PORT=8880
       - DIM_CONFIG_PATH=/app/config/config.json
       - DIM_LOG_LEVEL=INFO

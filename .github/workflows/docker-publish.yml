@@ -34,7 +34,7 @@ jobs:
           tags: |
             # Release 탭에서 버전 태그(v1.0.0 등)로 발행시 자동으로 해당 태그 적용
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            # type=semver,pattern={{major}}.{{minor}}
             # 수동 실행 혹은 기본 브랜치일 경우 'latest' 태그 생성
             type=raw,value=latest
 
