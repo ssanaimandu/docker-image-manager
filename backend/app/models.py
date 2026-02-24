@@ -103,6 +103,8 @@ class AuthConfig(BaseModel):
 
 class AppConfig(BaseModel):
     default_keep_tags: int = 5
+    auto_cleanup_schedule: str = "disabled"
+    last_cleanup_run: float = 0.0
     auth: AuthConfig = Field(default_factory=AuthConfig)
     sources: list[Source] = Field(default_factory=list)
     image_policies: dict[str, ImagePolicy] = Field(default_factory=dict)
@@ -181,3 +183,4 @@ class PolicyUpdate(BaseModel):
 
 class DefaultPolicyUpdate(BaseModel):
     default_keep_tags: int
+    auto_cleanup_schedule: Optional[str] = None

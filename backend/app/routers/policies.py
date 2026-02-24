@@ -16,6 +16,7 @@ def get_all_policies():
     cfg = get_current_config()
     return {
         "default_keep_tags": cfg.default_keep_tags,
+        "auto_cleanup_schedule": getattr(cfg, "auto_cleanup_schedule", "disabled"),
         "image_policies": cfg.image_policies,
     }
 
@@ -24,8 +25,13 @@ def get_all_policies():
 def update_default_policy(body: DefaultPolicyUpdate):
     cfg = get_current_config()
     cfg.default_keep_tags = body.default_keep_tags
+    if body.auto_cleanup_schedule is not None:
+        cfg.auto_cleanup_schedule = body.auto_cleanup_schedule
     save_config(cfg)
-    return {"default_keep_tags": cfg.default_keep_tags}
+    return {
+        "default_keep_tags": cfg.default_keep_tags,
+        "auto_cleanup_schedule": getattr(cfg, "auto_cleanup_schedule", "disabled")
+    }
 
 
 @router.get("/{image_name:path}")

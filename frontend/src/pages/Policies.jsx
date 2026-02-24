@@ -5,6 +5,7 @@ import { useToast } from '../components/Toast';
 export default function Policies() {
     const toast = useToast();
     const [defaultKeep, setDefaultKeep] = useState(5);
+    const [autoCleanupSchedule, setAutoCleanupSchedule] = useState('disabled');
     const [policies, setPolicies] = useState({});
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -16,6 +17,7 @@ export default function Policies() {
         try {
             const data = await getPolicies();
             setDefaultKeep(data.default_keep_tags);
+            setAutoCleanupSchedule(data.auto_cleanup_schedule || 'disabled');
             setPolicies(data.image_policies || {});
         } catch { /* */ }
         setLoading(false);
@@ -25,7 +27,10 @@ export default function Policies() {
 
     const handleSaveDefault = async () => {
         try {
-            await updateDefaultPolicy({ default_keep_tags: defaultKeep });
+            await updateDefaultPolicy({
+                default_keep_tags: defaultKeep,
+                auto_cleanup_schedule: autoCleanupSchedule
+            });
             toast('Default policy updated', 'success');
         } catch (e) {
             toast(e.message, 'error');
@@ -110,7 +115,7 @@ export default function Policies() {
                 <div className="card-header">
                     <h2 className="card-title">Default Retention Policy</h2>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
                     <div className="form-group" style={{ marginBottom: 0, flex: '0 0 200px' }}>
                         <label className="form-label">Keep Tags (Default)</label>
                         <input
@@ -121,10 +126,23 @@ export default function Policies() {
                             onChange={e => setDefaultKeep(Number(e.target.value))}
                         />
                     </div>
-                    <button className="btn btn-primary" onClick={handleSaveDefault}>Save</button>
+                    <div className="form-group" style={{ marginBottom: 0, flex: '0 0 250px' }}>
+                        <label className="form-label">Automatic Cleanup Schedule</label>
+                        <select
+                            className="form-select"
+                            value={autoCleanupSchedule}
+                            onChange={e => setAutoCleanupSchedule(e.target.value)}
+                        >
+                            <option value="disabled">Disabled</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <button className="btn btn-primary" onClick={handleSaveDefault}>Save Global Defaults</button>
                 </div>
                 <p style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-                    Images without a specific policy will keep this many tags (newest first).
+                    Images without a specific policy will keep this many tags (newest first). The automatic cleanup schedule will run garbage collection in the background.
                 </p>
             </div>
 

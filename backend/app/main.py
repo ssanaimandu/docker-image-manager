@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import load_config, get_web_port
 from app.routers import sources, images, policies, cleanup, auth
+from app.services.scheduler import run_scheduler
 from app.utils.logger import setup_logging, get_logger
 from fastapi import Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -24,7 +26,13 @@ async def lifespan(app: FastAPI):
     log = get_logger("dim")
     load_config()
     log.info("Docker Image Manager started on port %s", get_web_port())
+    
+    # Start the automatic cleanup scheduler
+    scheduler_task = asyncio.create_task(run_scheduler())
+    
     yield
+    
+    scheduler_task.cancel()
     log.info("Docker Image Manager shutting down")
 
 
