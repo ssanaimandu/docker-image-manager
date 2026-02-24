@@ -25,7 +25,6 @@ class ArtifactoryService:
 
     def __init__(self, connection: dict[str, Any]):
         self.base_url = connection.get("url", "").rstrip("/")
-        self.repository = connection.get("repository", "docker-local")
         self.username = connection.get("username", "")
         self.password = connection.get("password", "")
         self.api_key = connection.get("api_key", "")
@@ -34,9 +33,10 @@ class ArtifactoryService:
         # build a registry-api fallback if required
         if self.use_registry_api:
             registry_conn = {
-                "url": f"{self.base_url}/v2/{self.repository}",
+                "url": self.base_url,
                 "username": self.username,
                 "password": self.password or self.api_key,
+                "insecure": connection.get("insecure", False),
             }
             self._registry = PrivateRegistryService(registry_conn)
         else:
@@ -59,7 +59,6 @@ class ArtifactoryService:
 
     def _client(self) -> httpx.Client:
         return httpx.Client(
-            base_url=self.base_url,
             auth=self._auth(),
             headers=self._headers(),
             timeout=_TIMEOUT,
@@ -74,8 +73,8 @@ class ArtifactoryService:
             return self._registry.ping()
         try:
             with self._client() as c:
-                r = c.get("/api/system/ping")
-                return r.status_code == 200
+                r = c.get(f"{self.base_url}/v2/")
+                return r.status_code in (200, 401)
         except httpx.HTTPError:
             return False
 
@@ -86,8 +85,9 @@ class ArtifactoryService:
     def _list_repositories_rest(self) -> list[str]:
         try:
             with self._client() as c:
-                r = c.get(f"/api/docker/{self.repository}/v2/_catalog")
-                r.raise_for_status()
+                r = c.get(f"{self.base_url}/v2/_catalog")
+                if r.status_code != 200:
+                    return []
                 return r.json().get("repositories", [])
         except httpx.HTTPError as exc:
             log.error("Artifactory list repos failed: %s", exc)
@@ -96,10 +96,9 @@ class ArtifactoryService:
     def _list_tags_rest(self, image: str) -> list[str]:
         try:
             with self._client() as c:
-                r = c.get(
-                    f"/api/docker/{self.repository}/v2/{image}/tags/list"
-                )
-                r.raise_for_status()
+                r = c.get(f"{self.base_url}/v2/{image}/tags/list")
+                if r.status_code != 200:
+                    return []
                 return r.json().get("tags") or []
         except httpx.HTTPError as exc:
             log.error("Artifactory list tags for %s failed: %s", image, exc)
@@ -109,9 +108,9 @@ class ArtifactoryService:
         info: dict[str, Any] = {}
         try:
             with self._client() as c:
-                # Artifactory-specific: get storage info
-                path = f"/api/storage/{self.repository}/{image}/{tag}"
-                r = c.get(path)
+                # Attempt to convert docker API URL to storage API URL to get size
+                path = self.base_url.replace("/api/docker/", "/api/storage/")
+                r = c.get(f"{path}/{image}/{tag}")
                 if r.status_code == 200:
                     data = r.json()
                     info["size"] = data.get("size", 0)
@@ -167,10 +166,8 @@ class ArtifactoryService:
 
         try:
             with self._client() as c:
-                # Delete the tag manifest via Artifactory REST
-                r = c.delete(
-                    f"/api/docker/{self.repository}/v2/{image}/manifests/{tag}"
-                )
+                # Delete the tag manifest via REST
+                r = c.delete(f"{self.base_url}/v2/{image}/manifests/{tag}")
                 if r.status_code in (200, 202, 204):
                     log.info("Artifactory: deleted %s:%s", image, tag)
                     return True

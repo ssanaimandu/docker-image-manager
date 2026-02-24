@@ -32,7 +32,6 @@ class PrivateRegistryService:
 
     def _client(self) -> httpx.Client:
         return httpx.Client(
-            base_url=self.base_url,
             auth=self._auth,
             verify=not self.insecure,
             timeout=_TIMEOUT,
@@ -45,7 +44,7 @@ class PrivateRegistryService:
     def ping(self) -> bool:
         try:
             with self._client() as c:
-                r = c.get("/v2/")
+                r = c.get(f"{self.base_url}/v2/")
                 return r.status_code in (200, 401)
         except httpx.HTTPError:
             return False
@@ -57,7 +56,7 @@ class PrivateRegistryService:
     def list_repositories(self) -> list[str]:
         try:
             with self._client() as c:
-                r = c.get("/v2/_catalog", params={"n": 10000})
+                r = c.get(f"{self.base_url}/v2/_catalog", params={"n": 10000})
                 r.raise_for_status()
                 return r.json().get("repositories", [])
         except httpx.HTTPError as exc:
@@ -67,7 +66,7 @@ class PrivateRegistryService:
     def list_tags(self, repo: str) -> list[str]:
         try:
             with self._client() as c:
-                r = c.get(f"/v2/{repo}/tags/list")
+                r = c.get(f"{self.base_url}/v2/{repo}/tags/list")
                 r.raise_for_status()
                 return r.json().get("tags") or []
         except httpx.HTTPError as exc:
@@ -79,7 +78,7 @@ class PrivateRegistryService:
         try:
             with self._client() as c:
                 r = c.get(
-                    f"/v2/{repo}/manifests/{tag}",
+                    f"{self.base_url}/v2/{repo}/manifests/{tag}",
                     headers={
                         "Accept": "application/vnd.docker.distribution.manifest.v2+json"
                     },
@@ -96,7 +95,7 @@ class PrivateRegistryService:
         try:
             with self._client() as c:
                 r = c.get(
-                    f"/v2/{repo}/manifests/{tag}",
+                    f"{self.base_url}/v2/{repo}/manifests/{tag}",
                     headers={
                         "Accept": "application/vnd.docker.distribution.manifest.v2+json"
                     },
@@ -153,7 +152,7 @@ class PrivateRegistryService:
             return False
         try:
             with self._client() as c:
-                r = c.delete(f"/v2/{repo}/manifests/{digest}")
+                r = c.delete(f"{self.base_url}/v2/{repo}/manifests/{digest}")
                 if r.status_code == 202:
                     log.info("Deleted %s:%s (digest %s)", repo, tag, digest)
                     return True

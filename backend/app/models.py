@@ -35,7 +35,6 @@ class RegistryConnection(BaseModel):
 
 class ArtifactoryConnection(BaseModel):
     url: str = ""
-    repository: str = "docker-local"
     username: str = ""
     password: str = ""
     api_key: str = ""

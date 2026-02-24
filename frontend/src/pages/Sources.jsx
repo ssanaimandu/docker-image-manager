@@ -11,7 +11,7 @@ const SOURCE_TYPES = [
 const defaultConn = {
     docker_engine: { socket_path: '/var/run/docker.sock', host: '', tls: false },
     private_registry: { url: '', username: '', password: '', insecure: false },
-    artifactory: { url: '', repository: 'docker-local', username: '', password: '', api_key: '', use_registry_api: false },
+    artifactory: { url: '', username: '', password: '', api_key: '', use_registry_api: false },
 };
 
 export default function Sources() {
@@ -151,12 +151,8 @@ export default function Sources() {
             return (
                 <>
                     <div className="form-group">
-                        <label className="form-label">Artifactory URL</label>
-                        <input className="form-input" value={form.connection.url || ''} onChange={e => handleConnChange('url', e.target.value)} placeholder="https://artifactory.example.com" />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Repository</label>
-                        <input className="form-input" value={form.connection.repository || ''} onChange={e => handleConnChange('repository', e.target.value)} placeholder="docker-local" />
+                        <label className="form-label">Artifactory Repo URL</label>
+                        <input className="form-input" value={form.connection.url || ''} onChange={e => handleConnChange('url', e.target.value)} placeholder="https://artifactory.example.com/api/docker/my-repo" />
                     </div>
                     <div className="form-row">
                         <div className="form-group">
